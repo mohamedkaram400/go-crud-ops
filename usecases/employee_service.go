@@ -1,14 +1,15 @@
 package usecases
 
 import (
-	// "encoding/json"
-	// "log"
-	// "net/http"
+	"errors"
+	"log"
+	"net/http"
 
 	"github.com/google/uuid"
-	// "github.com/gorilla/mux"
+	"github.com/gorilla/mux"
 	"github.com/mohamedkaram400/go-crud-ops/models"
 	"github.com/mohamedkaram400/go-crud-ops/repository"
+	"github.com/mohamedkaram400/go-crud-ops/requests"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -16,149 +17,86 @@ type EmployeeService struct {
 	MongoCollection *mongo.Collection
 }
 
-// type Response struct {
-// 	Data  interface{} `json:"data"`
-// 	Error string      `json:"error,omitempty"`
-// }
+func (svc *EmployeeService) CreateEmployee(employee *models.Employee) (*models.Employee, error) {
 
-func (svc *EmployeeService) CreateEmployee(emp *models.Employee) (string, error) {
-
-	// Business logic
-	emp.EmployeeID = uuid.NewString()
+	employee.EmployeeID = uuid.NewString()
 
 	repo := repository.EmployeeRepo{MongoCollection: svc.MongoCollection}
-	_, err := repo.InsertEmployee(emp)
+	_, err := repo.InsertEmployee(employee)
 	
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
-	return emp.EmployeeID, nil
+	return employee, nil
 }
 
-// func (svc *EmployeeService) GetAllEmployees(w http.ResponseWriter, r *http.Request) {
-// 	w.Header().Add("Content-Type", "application/json")
+func (svc *EmployeeService) GetAllEmployees() ([]models.Employee, error) {
 
-// 	res := &Response{}
-// 	defer json.NewEncoder(w).Encode(res)
+	repo := repository.EmployeeRepo{MongoCollection: svc.MongoCollection}
+	employees, err := repo.GetAllEmployees()
 
-// 	repo := repository.EmployeeRepo{MongoCollection: svc.MongoCollection}
+	if err != nil {
+		return nil, err
+	}
 
-// 	// Insert employee
-// 	emp, err := repo.GetAllEmployees()
+	return employees, nil
+}
 
-// 	if err != nil {
-// 		w.WriteHeader(http.StatusBadRequest)
-// 		log.Print("error", err)
-// 		res.Error = err.Error()
-// 		return
-// 	}
+func (svc *EmployeeService) FindEmployeeByID(r *http.Request) (*models.Employee, error) {
+
+	empID := mux.Vars(r)["uuid"]
+	log.Println("employee id", empID)
+
+	repo := repository.EmployeeRepo{MongoCollection: svc.MongoCollection}
+	employee, err := repo.FindEmployeeByID(empID)
+
+	if err != nil {
+		return nil, err
+	}
 	
-// 	res.Data = emp
-// 	w.WriteHeader(http.StatusOK)
-// }
+	return employee, nil
+}
 
-// func (svc *EmployeeService) GetEmployeeByID(w http.ResponseWriter, r *http.Request) {
-// 	w.Header().Add("Content-Type", "application/json")
+func (svc *EmployeeService) UpdateEmployee(r *http.Request, reqData *requests.UpdateEmployeeRequest) (int, error) {
 
-// 	res := &Response{}
-// 	defer json.NewEncoder(w).Encode(res)
+	// Step 2: Get employee ID from path
+	vars := mux.Vars(r)
+	employeeID := vars["uuid"]
+	if employeeID == "" {
+		return 0, errors.New("Employee ID is required in path")
+	}
 
-// 	empID := mux.Vars(r)["id"]
-// 	log.Println("employee id", empID)
+	// Convert request to model
+	employee := &models.Employee{
+		EmployeeID: employeeID,
+		Name:       reqData.Name,
+		Department: reqData.Department,
+	}
 
-// 	repo := repository.EmployeeRepo{MongoCollection: svc.MongoCollection}
+	repo := repository.EmployeeRepo{MongoCollection: svc.MongoCollection}
+	count, err := repo.UpdateEmployee(employeeID, employee)
+	if err != nil {
+		return 0, err
+	}
 
-// 	// Insert employee
-// 	emp, err := repo.FindEmployeeByID(empID)
+	return count, nil
+}
 
-// 	if err != nil {
-// 		w.WriteHeader(http.StatusBadRequest)
-// 		log.Print("error", err)
-// 		res.Error = err.Error()
-// 		return
-// 	}
+func (svc *EmployeeService) DeleteEmployee(r *http.Request) (int, error) {
 	
-// 	res.Data = emp
-// 	w.WriteHeader(http.StatusOK)
-// }
+	employeeID := mux.Vars(r)["uuid"]
+	log.Println("employee id", employeeID)
 
-// func (svc *EmployeeService) UpdateEmployee(w http.ResponseWriter, r *http.Request) {
-// 	w.Header().Add("Content-Type", "application/json")
-	
-// 	res := &Response{}
-// 	defer json.NewEncoder(w).Encode(res)
+	if employeeID == "" {
+		return 0, errors.New("invalid employee id")
+	}
 
-// 	employeeID := mux.Vars(r)["id"]
-// 	log.Println("employee id", employeeID)
+	repo := repository.EmployeeRepo{MongoCollection: svc.MongoCollection}
+	count, err := repo.DeleteEmployee(employeeID)
+	if err != nil {
+		return 0, err
+	}
 
-// 	if  employeeID == "" {
-// 		w.WriteHeader(http.StatusBadRequest)
-// 		log.Print("Invalid employee id")
-// 		res.Error = "Invalid employee id"
-// 		return
-// 	}
-	
-// 	var emp models.Employee
-
-// 	err := json.NewDecoder(r.Body).Decode(&emp)
-
-// 	if err != nil {
-// 		w.WriteHeader(http.StatusBadRequest)
-// 		log.Print("Invalid body", err)
-// 		res.Error = err.Error()
-// 		return
-// 	}
-
-// 	emp.EmployeeID = employeeID
-
-// 	repo := repository.EmployeeRepo{MongoCollection: svc.MongoCollection}
-
-// 	// Update employee
-// 	count, err := repo.UpdateEmployee(employeeID, &emp)
-
-
-// 	if err != nil {
-// 		w.WriteHeader(http.StatusBadRequest)
-// 		log.Print("Invalid body", err)
-// 		res.Error = err.Error()
-// 		return
-// 	}
-
-// 	res.Data = count
-// 	w.WriteHeader(http.StatusOK)
-
-// 	log.Println("Employee inserted with id", employeeID, emp)
-
-// }
-
-// func (svc *EmployeeService) DeleteEmployee(w http.ResponseWriter, r *http.Request) {
-// 	w.Header().Add("Content-Type", "application/json")
-
-// 	res := &Response{}
-// 	defer json.NewEncoder(w).Encode(res)
-
-// 	employeeID := mux.Vars(r)["id"]
-// 	log.Println("employee id", employeeID)
-
-// 	if  employeeID == "" {
-// 		w.WriteHeader(http.StatusBadRequest)
-// 		log.Print("Invalid employee id")
-// 		res.Error = "Invalid employee id"
-// 		return
-// 	}
-
-// 	repo := repository.EmployeeRepo{MongoCollection: svc.MongoCollection}
-
-// 	count, err := repo.DeleteEmployee(employeeID)
-
-// 	if err != nil {
-// 		w.WriteHeader(http.StatusBadRequest)
-// 		log.Print("Invalid ", err)
-// 		res.Error = err.Error()
-// 		return
-// 	}
-
-// 	res.Data = count
-// 	w.WriteHeader(http.StatusOK)
-// }
+	return count, nil
+}

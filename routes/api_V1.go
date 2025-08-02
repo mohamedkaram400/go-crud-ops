@@ -15,10 +15,10 @@ func RegisterAPIV1Routes(router *mux.Router, empHandler *handlers.EmployeeHandle
 
 	// Employee Routes
 	api.HandleFunc("/create", empHandler.CreateEmployee).Methods(http.MethodPost)
-	// api.HandleFunc("/all", 			empHandler.GetAllEmployees).Methods(http.MethodGet)
-	// api.HandleFunc("/show/{id}", 	empHandler.GetEmployeeByID).Methods(http.MethodGet)
-	// api.HandleFunc("/edit/{id}", 	empHandler.UpdateEmployee).Methods(http.MethodPut)
-	// api.HandleFunc("/delete/{id}", 	empHandler.DeleteEmployee).Methods(http.MethodDelete)
+	api.HandleFunc("/all", 			empHandler.GetAllEmployees).Methods(http.MethodGet)
+	api.HandleFunc("/show/{uuid}", 	empHandler.GetEmployeeByID).Methods(http.MethodGet)
+	api.HandleFunc("/edit/{uuid}", 	empHandler.UpdateEmployee).Methods(http.MethodPut)
+	api.HandleFunc("/delete/{uuid}", 	empHandler.DeleteEmployee).Methods(http.MethodDelete)
 }
 
 func HealthHandler(w http.ResponseWriter, r *http.Request) {
