@@ -1,16 +1,20 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/gorilla/mux"
-	"github.com/mohamedkaram400/go-crud-ops/usecases"
-	"github.com/mohamedkaram400/go-crud-ops/handlers"
-	"github.com/mohamedkaram400/go-crud-ops/routes"
-	"github.com/mohamedkaram400/go-crud-ops/db"
-	"github.com/mohamedkaram400/go-crud-ops/config"
 	"github.com/joho/godotenv"
+	"github.com/mohamedkaram400/go-crud-ops/config"
+	"github.com/mohamedkaram400/go-crud-ops/db"
+	"github.com/mohamedkaram400/go-crud-ops/handlers"
+	"github.com/mohamedkaram400/go-crud-ops/internal/redis"
+	"github.com/mohamedkaram400/go-crud-ops/middlewares"
+	"github.com/mohamedkaram400/go-crud-ops/routes"
+	"github.com/mohamedkaram400/go-crud-ops/usecases"
 )
 
 
@@ -28,20 +32,30 @@ func main() {
 		log.Fatal("❌ Failed to connect Mongo:", err)
 	}
 
-	// 3. Get collection for employees
+	// 3. Connect to Redis
+	if err := redisclient.Init(); err != nil {
+		log.Fatalf("❌ Failed to connect Redis: %v", err)
+	}
+
+	// 4. Get collection for employees
 	collection := client.Database(config.GetDBName()).Collection(config.GetCollectionName())
 
-	// 4. Create service layer
+	// 5. Create service layer
 	employeeService := usecases.EmployeeService{MongoCollection: collection}
 
-	// 5. Create handler layer
+	// 6. Create handler layer
 	empHandler := &handlers.EmployeeHandler{Service: &employeeService}
-
-	// 6. Create router and register API routes
+	
+	// 7. Create router and register API routes
 	router := mux.NewRouter()
+
+	fmt.Println("ttt:", config.GetRateNumber())
+	// 8. Add rate limiter validation
+	router.Use(middlewares.RateLimiter(config.GetRateNumber(), 10 * time.Second)) 
+
 	routes.RegisterAPIV1Routes(router, empHandler)
 
-	// 7. Start HTTP server
+	// 9. Start HTTP server
 	StartServer(router)
 }
 

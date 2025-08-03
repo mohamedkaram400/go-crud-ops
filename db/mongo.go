@@ -30,6 +30,6 @@ func ConnectMongo(uri string) (*mongo.Client, error) {
 	}
 
 	MongoClient = client
-	log.Println("✅ MongoDB Connected")
+	log.Println("✅ Connected to MongoDB successfully")
 	return client, nil
 }

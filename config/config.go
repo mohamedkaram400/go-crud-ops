@@ -2,6 +2,7 @@ package config
 
 import (
 	"os"
+	"strconv"
 )
 
 func GetMongoURI() string {
@@ -22,4 +23,17 @@ func GetPort() string {
 		port = "4444"
 	}
 	return ":" + port
+}
+
+func GetRedisHost() string {
+	return os.Getenv("REDIS_HOST")
+}
+
+func GetRateNumber() int {
+	rateStr := os.Getenv("RATE_NUMBER")
+	rateInt, err := strconv.Atoi(rateStr)
+	if err != nil {
+		panic("Invalid RATE_NUMBER, must be an integer")
+	}
+	return rateInt
 }
