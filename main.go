@@ -51,7 +51,7 @@ func main() {
 
 	fmt.Println("ttt:", config.GetRateNumber())
 	// 8. Add rate limiter validation
-	router.Use(middlewares.RateLimiter(config.GetRateNumber(), 10 * time.Second)) 
+	router.Use(middlewares.RateLimiter(config.GetRateNumber(), time.Minute)) 
 
 	routes.RegisterAPIV1Routes(router, empHandler)
 
