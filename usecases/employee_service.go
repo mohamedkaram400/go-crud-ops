@@ -4,6 +4,7 @@ import (
 	"errors"
 	"log"
 	"net/http"
+	"strconv"
 
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
@@ -31,16 +32,36 @@ func (svc *EmployeeService) CreateEmployee(employee *models.Employee) (*models.E
 	return employee, nil
 }
 
-func (svc *EmployeeService) GetAllEmployees() ([]models.Employee, error) {
+func (svc *EmployeeService) GetAllEmployees(pageStr, limitStr string) ([]models.Employee, int, int, int, error) {
 
-	repo := repository.EmployeeRepo{MongoCollection: svc.MongoCollection}
-	employees, err := repo.GetAllEmployees()
+	page := 1
+	limit := 10
 
-	if err != nil {
-		return nil, err
+	var err error
+	if pageStr != "" {
+		page, err = strconv.Atoi(pageStr)
+		if err != nil || page < 1 {
+			page = 1
+		}
 	}
 
-	return employees, nil
+	if limitStr != "" {
+		limit, err = strconv.Atoi(limitStr)
+		if err != nil || limit < 1 {
+			limit = 10
+		}
+	}
+
+	skip := (page - 1) * limit
+
+	repo := repository.EmployeeRepo{MongoCollection: svc.MongoCollection}
+
+	employees, totalCount, err := repo.GetAllEmployees(skip, limit)
+	if err != nil {
+		return nil, 0, 0, 0, err
+	}
+
+	return employees, totalCount, page, limit, nil
 }
 
 func (svc *EmployeeService) FindEmployeeByID(r *http.Request) (*models.Employee, error) {

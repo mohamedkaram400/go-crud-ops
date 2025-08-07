@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 
@@ -10,10 +11,19 @@ import (
 	"github.com/mohamedkaram400/go-crud-ops/usecases"
 )
 
+type PaginatedResult struct {
+	Message    string              `json:"message,omitempty"`
+	Error      string              `json:"error,omitempty"`
+	Data       []models.Employee   `json:"data,omitempty"`
+	TotalCount int                 `json:"totalCount"`
+	Page       int                 `json:"page"`
+	Limit      int                 `json:"limit"`
+}
+
 type EmployeeResponse struct {
-	Message  string `json:"message,omitempty"`
-	Data  interface{} `json:"data,omitempty"`
-	Error string      `json:"error,omitempty"`
+	Message     string 			`json:"message,omitempty"`
+	Data  		[]models.Employee `json:"data,omitempty"`
+	Error 		string      	`json:"error,omitempty"`
 }
 
 type EmployeeHandler struct {
@@ -23,11 +33,15 @@ type EmployeeHandler struct {
 func (h *EmployeeHandler) GetAllEmployees(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Content-Type", "application/json")
 
-	res := &EmployeeResponse{}
+	res := &PaginatedResult{}
 	defer json.NewEncoder(w).Encode(res)
 
+	pageStr := r.URL.Query().Get("page")
+	limitStr := r.URL.Query().Get("limit")
 
-	employees, err := h.Service.GetAllEmployees()
+	fmt.Println(pageStr, limitStr)
+
+	employees, totalCount, page, limit, err := h.Service.GetAllEmployees(pageStr, limitStr)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		res.Error = err.Error()
@@ -36,6 +50,10 @@ func (h *EmployeeHandler) GetAllEmployees(w http.ResponseWriter, r *http.Request
 
 	res.Message = "Employees returned successfully"
 	res.Data = employees
+	res.Page = page
+	res.Limit = limit
+	res.TotalCount = totalCount
+	
 	w.WriteHeader(http.StatusOK)
 }
 
