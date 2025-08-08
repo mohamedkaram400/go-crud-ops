@@ -39,35 +39,33 @@ func (r *EmployeeRepo) FindEmployeeByID(employeeID string) (*models.Employee, er
 	return &emp, nil
 }
 
-func (r *EmployeeRepo) GetAllEmployees(page int, limit int) ([]models.Employee, int, error) {
-
-	skip := (page - 1) * limit
-
-	findOptions := options.Find()
-	findOptions.SetSkip(int64(skip))
-	findOptions.SetSkip(int64(limit))
-
-	cursor, err := r.MongoCollection.Find(context.Background(), bson.D{}, findOptions)
-
-	if err != nil {
-		return nil, 0, err
-	}
-
-	defer cursor.Close(context.Background())
-
-	var emps []models.Employee
-	err = cursor.All(context.Background(), &emps)
-
-	if err != nil {
-		return nil, 0, fmt.Errorf("results decode error %s", err.Error())
-	}
+func (r *EmployeeRepo) GetAllEmployees(skip int, limit int) ([]models.Employee, int, error) {
 
 	totalCount, err := r.MongoCollection.CountDocuments(context.Background(), bson.D{})
 	if err != nil {
 		return nil, 0, err
 	}
 
-	return emps, int(totalCount), nil
+	findOptions := options.Find()
+	findOptions.SetLimit(int64(limit))
+	findOptions.SetSkip(int64(skip))
+	findOptions.SetSort(bson.M{"_id": -1})
+ 
+	cursor, err := r.MongoCollection.Find(context.Background(), bson.D{}, findOptions)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	defer cursor.Close(context.Background())
+
+
+	var employees []models.Employee
+
+	if 	err = cursor.All(context.Background(), &employees); err != nil {
+		return nil, 0, fmt.Errorf("results decode error %s", err.Error())
+	}
+
+	return employees, int(totalCount), nil
 }
 
 func (r *EmployeeRepo) UpdateEmployee(employeeID string, newEmployee *models.Employee) (int, error) {

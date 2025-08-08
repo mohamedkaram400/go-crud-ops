@@ -22,7 +22,7 @@ type PaginatedResult struct {
 
 type EmployeeResponse struct {
 	Message     string 			`json:"message,omitempty"`
-	Data  		[]models.Employee `json:"data,omitempty"`
+	Data  		interface{} `json:"data,omitempty"`
 	Error 		string      	`json:"error,omitempty"`
 }
 
