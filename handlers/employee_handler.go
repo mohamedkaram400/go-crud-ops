@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/mohamedkaram400/go-crud-ops/helpers"
 	"github.com/mohamedkaram400/go-crud-ops/models"
 	"github.com/mohamedkaram400/go-crud-ops/requests"
 	"github.com/mohamedkaram400/go-crud-ops/usecases"
@@ -14,7 +15,7 @@ import (
 type PaginatedResult struct {
 	Message    string              `json:"message,omitempty"`
 	Error      string              `json:"error,omitempty"`
-	Data       []models.Employee   `json:"data,omitempty"`
+	Data       []*helpers.EmployeeDTO   `json:"data,omitempty"`
 	TotalCount int                 `json:"totalCount"`
 	Page       int                 `json:"page"`
 	Limit      int                 `json:"limit"`
@@ -22,7 +23,7 @@ type PaginatedResult struct {
 
 type EmployeeResponse struct {
 	Message     string 			`json:"message,omitempty"`
-	Data  		interface{} `json:"data,omitempty"`
+	Data  		interface{} 	`json:"data,omitempty"`
 	Error 		string      	`json:"error,omitempty"`
 }
 
@@ -33,27 +34,31 @@ type EmployeeHandler struct {
 func (h *EmployeeHandler) GetAllEmployees(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Content-Type", "application/json")
 
-	res := &PaginatedResult{}
-	defer json.NewEncoder(w).Encode(res)
-
 	pageStr := r.URL.Query().Get("page")
 	limitStr := r.URL.Query().Get("limit")
 
 	fmt.Println(pageStr, limitStr)
 
-	employees, totalCount, page, limit, err := h.Service.GetAllEmployees(pageStr, limitStr)
+	employees, message, totalCount, page, limit, err := h.Service.GetAllEmployees(pageStr, limitStr)
+
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		res.Error = err.Error()
+		json.NewEncoder(w).Encode(&PaginatedResult{
+			Error: err.Error(),
+		})
 		return
 	}
 
-	res.Message = "Employees returned successfully"
-	res.Data = employees
-	res.Page = page
-	res.Limit = limit
-	res.TotalCount = totalCount
-	
+	res := &PaginatedResult{
+		Message:  message,
+		Data: helpers.ConvertEmployeesToDTOs(employees),
+		Page: page,
+		Limit: limit,
+		TotalCount: totalCount,
+	}
+
+	defer json.NewEncoder(w).Encode(res)
+
 	w.WriteHeader(http.StatusOK)
 }
 
@@ -84,7 +89,7 @@ func (h *EmployeeHandler) CreateEmployee(w http.ResponseWriter, r *http.Request)
 	res := &EmployeeResponse{}
 	defer json.NewEncoder(w).Encode(res)
 
-	
+	fmt.Println(r)
 	// Step 1: Validate
 	req, err := requests.ParseAndValidateCreateEmployee(r)
 	if err != nil {
@@ -96,6 +101,8 @@ func (h *EmployeeHandler) CreateEmployee(w http.ResponseWriter, r *http.Request)
 	emp := &models.Employee{
 		Name:       req.Name,
 		Department: req.Department,
+		UserName: req.UserName,
+		Password: req.Password,
 	}
 
 	// Step 2: Call service

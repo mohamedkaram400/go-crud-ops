@@ -7,18 +7,23 @@ import (
 	"github.com/mohamedkaram400/go-crud-ops/handlers"
 )
 
-func RegisterAPIV1Routes(router *mux.Router, empHandler *handlers.EmployeeHandler) {
-	api := router.PathPrefix("/api/v1/employees").Subrouter()
+func RegisterAPIV1Routes(router *mux.Router, employeeHandler *handlers.EmployeeHandler, authHandler *handlers.AuthHandler) {
+	api := router.PathPrefix("/api/v1").Subrouter()
 
 	// Health Check
 	api.HandleFunc("/health", HealthHandler).Methods(http.MethodGet)
 
+	// Auth Routes
+	api.HandleFunc("/register", authHandler.RegisterHandler)
+	api.HandleFunc("/login", authHandler.LoginHandler)
+	api.HandleFunc("/logout", authHandler.LogoutHandler)
+
 	// Employee Routes
-	api.HandleFunc("/create", empHandler.CreateEmployee).Methods(http.MethodPost)
-	api.HandleFunc("/all", 			empHandler.GetAllEmployees).Methods(http.MethodGet)
-	api.HandleFunc("/show/{uuid}", 	empHandler.GetEmployeeByID).Methods(http.MethodGet)
-	api.HandleFunc("/edit/{uuid}", 	empHandler.UpdateEmployee).Methods(http.MethodPut)
-	api.HandleFunc("/delete/{uuid}", 	empHandler.DeleteEmployee).Methods(http.MethodDelete)
+	api.HandleFunc("/employees/create", employeeHandler.CreateEmployee).Methods(http.MethodPost)
+	api.HandleFunc("/employees/all", 			employeeHandler.GetAllEmployees).Methods(http.MethodGet)
+	api.HandleFunc("/employees/show/{uuid}", 	employeeHandler.GetEmployeeByID).Methods(http.MethodGet)
+	api.HandleFunc("/employees/edit/{uuid}", 	employeeHandler.UpdateEmployee).Methods(http.MethodPut)
+	api.HandleFunc("/employees/delete/{uuid}", 	employeeHandler.DeleteEmployee).Methods(http.MethodDelete)
 }
 
 func HealthHandler(w http.ResponseWriter, r *http.Request) {

@@ -55,7 +55,7 @@ func TestMongoOperations(t *testing.T) {
 		emp := models.Employee {
 			Name: "Mohamed Karam",
 			Department: "Backend Development",
-			EmployeeID: emp1,
+			ID: emp1,
 		}
 
 		result, err := empRepo.InsertEmployee(&emp)

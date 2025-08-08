@@ -30,7 +30,7 @@ func (r *EmployeeRepo) FindEmployeeByID(employeeID string) (*models.Employee, er
 	var emp models.Employee
 
 	err := r.MongoCollection.FindOne(context.Background(),
-		bson.D{{Key: "employeeid", Value: employeeID}}).Decode(&emp)
+		bson.D{{Key: "uuid", Value: employeeID}}).Decode(&emp)
 
 	if err != nil {
 		return nil, err
@@ -39,7 +39,7 @@ func (r *EmployeeRepo) FindEmployeeByID(employeeID string) (*models.Employee, er
 	return &emp, nil
 }
 
-func (r *EmployeeRepo) GetAllEmployees(skip int, limit int) ([]models.Employee, int, error) {
+func (r *EmployeeRepo) GetAllEmployees(skip int, limit int) ([]*models.Employee, int, error) {
 
 	totalCount, err := r.MongoCollection.CountDocuments(context.Background(), bson.D{})
 	if err != nil {
@@ -59,7 +59,7 @@ func (r *EmployeeRepo) GetAllEmployees(skip int, limit int) ([]models.Employee, 
 	defer cursor.Close(context.Background())
 
 
-	var employees []models.Employee
+	var employees []*models.Employee
 
 	if 	err = cursor.All(context.Background(), &employees); err != nil {
 		return nil, 0, fmt.Errorf("results decode error %s", err.Error())
@@ -85,7 +85,7 @@ func (r *EmployeeRepo) UpdateEmployee(employeeID string, newEmployee *models.Emp
 
 
 	result, err := r.MongoCollection.UpdateOne(context.Background(),
-		bson.D{{Key: "employeeid", Value: employeeID}},
+		bson.D{{Key: "uuid", Value: employeeID}},
 		bson.D{{Key: "$set", Value: update}})
 
 	if err != nil {
@@ -100,7 +100,7 @@ func (r *EmployeeRepo) DeleteEmployee(employeeID string) (int, error) {
 	log.Println("employee id", employeeID)
 
 	result, err := r.MongoCollection.DeleteOne(context.Background(),
-		bson.D{{Key: "employeeid", Value: employeeID}})
+		bson.D{{Key: "uuid", Value: employeeID}})
 
 	if err != nil {
 		return 0, err
