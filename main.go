@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 	"time"
@@ -13,6 +12,7 @@ import (
 	"github.com/mohamedkaram400/go-crud-ops/handlers"
 	"github.com/mohamedkaram400/go-crud-ops/internal/redis"
 	"github.com/mohamedkaram400/go-crud-ops/middlewares"
+	"github.com/mohamedkaram400/go-crud-ops/repository"
 	"github.com/mohamedkaram400/go-crud-ops/routes"
 	"github.com/mohamedkaram400/go-crud-ops/usecases"
 )
@@ -40,25 +40,34 @@ func main() {
 	// 4. Get Employee Collection for employees
 	employeeCollection := client.Database(config.GetDBName()).Collection(config.GetCollectionName())
 
-	// 5. Create service layer
-	employeeService := usecases.EmployeeService{MongoCollection: employeeCollection}
-
-	// 6. Create handler layer
-	employeeHandler := &handlers.EmployeeHandler{Service: &employeeService}
+	// 5. Create Repository layer
+	employeeRepo := &repository.EmployeeRepo{MongoCollection: employeeCollection}
 	
-	// 7. Create router and register API routes
+	// 6. Create service layer
+	employeeService := &usecases.EmployeeService{Repo: employeeRepo}
+
+	// 7. Create handler layer
+	employeeHandler := &handlers.EmployeeHandler{Service: employeeService}
+	
+	// 8. Create router and register API routes
 	router := mux.NewRouter()
 
-	fmt.Println("rate number:", config.GetRateNumber())
-	// 8. Add rate limiter validation
-	router.Use(middlewares.RateLimiter(config.GetRateNumber(), time.Minute)) 
+	// 9. Add rate limiter validation
+	router.Use(middlewares.RateLimiter(config.GetRateNumber(), time.Second)) 
 
+	// 10. Add resource for auth module
 	authService := &usecases.AuthService{MongoCollection: employeeCollection}
+
 	authHandler := &handlers.AuthHandler{Service: authService}
 
-	routes.RegisterAPIV1Routes(router, employeeHandler, authHandler)
+	// 11. Regsiter routes and give him api version 1
+	api := router.PathPrefix("/api/v1").Subrouter()
 
-	// 9. Start HTTP server
+	routes.RegisterAuthRoutes(api, authHandler)
+
+	routes.RegisterEmployeeRoutes(api, employeeHandler)
+
+	// 12. Start HTTP server
 	StartServer(router)
 }
 

@@ -10,13 +10,12 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/mohamedkaram400/go-crud-ops/helpers"
 	"github.com/mohamedkaram400/go-crud-ops/models"
-	"github.com/mohamedkaram400/go-crud-ops/repository"
 	"github.com/mohamedkaram400/go-crud-ops/requests"
-	"go.mongodb.org/mongo-driver/mongo"
+	"github.com/mohamedkaram400/go-crud-ops/interfaces"
 )
 
 type EmployeeService struct {
-	MongoCollection *mongo.Collection
+    Repo interfaces.EmployeeInterface
 }
 
 func (svc *EmployeeService) CreateEmployee(employee *models.Employee) (*models.Employee, error) {
@@ -29,8 +28,7 @@ func (svc *EmployeeService) CreateEmployee(employee *models.Employee) (*models.E
 	employee.ID = uuid.NewString()
 	employee.Password = hashedPassword
 
-	repo := repository.EmployeeRepo{MongoCollection: svc.MongoCollection}
-	_, err = repo.InsertEmployee(employee)
+	_, err = svc.Repo.InsertEmployee(employee)
 	
 	if err != nil {
 		return nil, err
@@ -61,9 +59,7 @@ func (svc *EmployeeService) GetAllEmployees(pageStr, limitStr string) ([]*models
 
 	skip := (page - 1) * limit
 
-	repo := repository.EmployeeRepo{MongoCollection: svc.MongoCollection}
-
-	employees, totalCount, err := repo.GetAllEmployees(skip, limit)
+	employees, totalCount, err := svc.Repo.GetAllEmployees(skip, limit)
 	if err != nil {
 		return nil, "", 0, 0, 0, err
 	}
@@ -79,8 +75,7 @@ func (svc *EmployeeService) FindEmployeeByID(r *http.Request) (*models.Employee,
 	empID := mux.Vars(r)["uuid"]
 	log.Println("employee id", empID)
 
-	repo := repository.EmployeeRepo{MongoCollection: svc.MongoCollection}
-	employee, err := repo.FindEmployeeByID(empID)
+	employee, err := svc.Repo.FindEmployeeByID(empID)
 
 	if err != nil {
 		return nil, err
@@ -105,8 +100,7 @@ func (svc *EmployeeService) UpdateEmployee(r *http.Request, reqData *requests.Up
 		Department: reqData.Department,
 	}
 
-	repo := repository.EmployeeRepo{MongoCollection: svc.MongoCollection}
-	count, err := repo.UpdateEmployee(id, employee)
+	count, err := svc.Repo.UpdateEmployee(id, employee)
 	if err != nil {
 		return 0, err
 	}
@@ -123,8 +117,7 @@ func (svc *EmployeeService) DeleteEmployee(r *http.Request) (int, error) {
 		return 0, errors.New("invalid employee id")
 	}
 
-	repo := repository.EmployeeRepo{MongoCollection: svc.MongoCollection}
-	count, err := repo.DeleteEmployee(id)
+	count, err := svc.Repo.DeleteEmployee(id)
 	if err != nil {
 		return 0, err
 	}
