@@ -56,7 +56,9 @@ func main() {
 	router.Use(middlewares.RateLimiter(config.GetRateNumber(), time.Second)) 
 
 	// 10. Add resource for auth module
-	authService := &usecases.AuthService{MongoCollection: employeeCollection}
+	authRepo := &repository.AuthRepo{MongoCollection: employeeCollection}
+
+	authService := &usecases.AuthService{Repo: authRepo}
 
 	authHandler := &handlers.AuthHandler{Service: authService}
 
@@ -65,7 +67,12 @@ func main() {
 
 	routes.RegisterAuthRoutes(api, authHandler)
 
-	routes.RegisterEmployeeRoutes(api, employeeHandler)
+	// Secure employee routes
+	protected := api.NewRoute().Subrouter()
+	
+	protected.Use(middlewares.JWTAuth)
+
+	routes.RegisterEmployeeRoutes(protected, employeeHandler)
 
 	// 12. Start HTTP server
 	StartServer(router)

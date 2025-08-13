@@ -9,13 +9,18 @@ import (
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"github.com/mohamedkaram400/go-crud-ops/helpers"
-	"github.com/mohamedkaram400/go-crud-ops/models"
-	"github.com/mohamedkaram400/go-crud-ops/requests"
 	"github.com/mohamedkaram400/go-crud-ops/interfaces"
+	"github.com/mohamedkaram400/go-crud-ops/models"
+	"github.com/mohamedkaram400/go-crud-ops/repository"
+	"github.com/mohamedkaram400/go-crud-ops/requests"
 )
 
 type EmployeeService struct {
     Repo interfaces.EmployeeInterface
+}
+
+func NewEmployeeService(repo *repository.EmployeeRepo) *EmployeeService {
+    return &EmployeeService{repo}
 }
 
 func (svc *EmployeeService) CreateEmployee(employee *models.Employee) (*models.Employee, error) {

@@ -1,32 +1,43 @@
 package auth
 
 import (
-	"os"
 	"time"
+	"errors"
 	"github.com/golang-jwt/jwt/v5"
 )
 
-var jwtKey = []byte(os.Getenv("JWT_SECRET"))
+var jwtSecret = []byte("YOUR_SECRET_KEY") // load from env
 
 func GenerateJWT(employeeID string) (string, error) {
-	claims := jwt.MapClaims{
-		"employee_id": employeeID,
-		"exp":         time.Now().Add(2 * time.Hour).Unix(),
-	}
+	claims := jwt.MapClaims{}
+	claims["employee_id"] = employeeID
+	claims["exp"] = time.Now().Add(time.Hour * 2).Unix()
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString(jwtKey)
+	return token.SignedString(jwtSecret)
 }
 
-func ValidateJWT(tokenStr string) (string, error) {
-	token, err := jwt.Parse(tokenStr, func(token *jwt.Token) (interface{}, error) {
-		return jwtKey, nil
+func ValidateJWT(tokenString string) (string, error) {
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, errors.New("unexpected signing method")
+		}
+		return jwtSecret, nil
 	})
 
 	if err != nil || !token.Valid {
-		return "", err
+		return "", errors.New("invalid token")
 	}
 
-	claims := token.Claims.(jwt.MapClaims)
-	return claims["employee_id"].(string), nil
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok {
+		return "", errors.New("invalid claims")
+	}
+
+	employeeID, ok := claims["employee_id"].(string)
+	if !ok {
+		return "", errors.New("employee_id not found in token")
+	}
+
+	return employeeID, nil
 }
