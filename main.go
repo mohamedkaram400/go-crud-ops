@@ -17,7 +17,6 @@ import (
 	"github.com/mohamedkaram400/go-crud-ops/usecases"
 )
 
-
 func main() {
 
 	// 1. Load env vars
@@ -42,18 +41,18 @@ func main() {
 
 	// 5. Create Repository layer
 	employeeRepo := &repository.EmployeeRepo{MongoCollection: employeeCollection}
-	
+
 	// 6. Create service layer
 	employeeService := &usecases.EmployeeService{Repo: employeeRepo}
 
 	// 7. Create handler layer
 	employeeHandler := &handlers.EmployeeHandler{Service: employeeService}
-	
+
 	// 8. Create router and register API routes
 	router := mux.NewRouter()
 
 	// 9. Add rate limiter validation
-	router.Use(middlewares.RateLimiter(config.GetRateNumber(), time.Second)) 
+	router.Use(middlewares.RateLimiter(config.GetRateNumber(), time.Second))
 
 	// 10. Add resource for auth module
 	authRepo := &repository.AuthRepo{MongoCollection: employeeCollection}
@@ -62,17 +61,16 @@ func main() {
 
 	authHandler := &handlers.AuthHandler{Service: authService}
 
-	// 11. Regsiter routes and give him api version 1
+	// 11. Register routes with api version 1
 	api := router.PathPrefix("/api/v1").Subrouter()
 
+	// Public (no auth)
 	routes.RegisterAuthRoutes(api, authHandler)
 
-	// Secure employee routes
-	protected := api.NewRoute().Subrouter()
-	
-	protected.Use(middlewares.JWTAuth)
-
-	routes.RegisterEmployeeRoutes(protected, employeeHandler)
+	// Protected (JWT required) — mount directly at /api/v1/employees
+	employees := router.PathPrefix("/api/v1/employees").Subrouter()
+	employees.Use(middlewares.JWTAuth)
+	routes.RegisterEmployeeRoutes(employees, employeeHandler)	
 
 	// 12. Start HTTP server
 	StartServer(router)

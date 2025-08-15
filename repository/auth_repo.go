@@ -1,11 +1,11 @@
 package repository
 
 import (
-
-	"go.mongodb.org/mongo-driver/bson"
-	"github.com/mohamedkaram400/go-crud-ops/models"
-	"go.mongodb.org/mongo-driver/mongo"
 	"context"
+
+	"github.com/mohamedkaram400/go-crud-ops/models"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type AuthRepo struct {
@@ -22,18 +22,16 @@ func (r *AuthRepo) GetEmployeeByUsername(ctx context.Context, username string) (
 	return &emp, nil
 }
 
-// func (r *AuthRepo) Register(data) (*models.Employee, string, error) {
+func (r *AuthRepo) Register(employee *models.Employee) (*models.Employee, string, error) {
+	_, err := r.MongoCollection.InsertOne(context.Background(), employee)
+	if err != nil {
+		return nil, "Error happened when creating new employee", err
+	}
+	return employee, "User register success", nil
+}
 
-// 	return employee, "User register success", nil
-// }
+func (r *AuthRepo) Logout(employeeID string) (string, error) {
 
-// func (r *AuthRepo) Login(userName string, password string) (*models.Employee, string, error) {
-
-// 	return employee, "User login success", nil
-// }
-
-// func (r *AuthRepo) Logout() (string, error) {
-
-// 	return "User logout success", nil
-// }
+	return "User logout success", nil
+}
 

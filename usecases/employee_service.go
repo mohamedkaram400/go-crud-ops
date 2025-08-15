@@ -95,7 +95,7 @@ func (svc *EmployeeService) UpdateEmployee(r *http.Request, reqData *requests.Up
 	vars := mux.Vars(r)
 	id := vars["uuid"]
 	if id == "" {
-		return 0, errors.New("Employee ID is required in path")
+		return 0, errors.New("employee ID is required in path")
 	}
 
 	// Convert request to model

@@ -10,10 +10,10 @@ import (
 func RegisterEmployeeRoutes(router *mux.Router, employeeHandler *handlers.EmployeeHandler) {
 
 	// Employee Routes
-	router.HandleFunc("/employees/create", employeeHandler.CreateEmployee).Methods(http.MethodPost)
-	router.HandleFunc("/employees/all", 			employeeHandler.GetAllEmployees).Methods(http.MethodGet)
-	router.HandleFunc("/employees/show/{uuid}", 	employeeHandler.GetEmployeeByID).Methods(http.MethodGet)
-	router.HandleFunc("/employees/edit/{uuid}", 	employeeHandler.UpdateEmployee).Methods(http.MethodPut)
-	router.HandleFunc("/employees/delete/{uuid}", 	employeeHandler.DeleteEmployee).Methods(http.MethodDelete)
+	router.HandleFunc("/create", employeeHandler.CreateEmployee).Methods(http.MethodPost)
+	router.HandleFunc("/all", 			employeeHandler.GetAllEmployees).Methods(http.MethodGet)
+	router.HandleFunc("/show/{uuid}", 	employeeHandler.GetEmployeeByID).Methods(http.MethodGet)
+	router.HandleFunc("/edit/{uuid}", 	employeeHandler.UpdateEmployee).Methods(http.MethodPut)
+	router.HandleFunc("/delete/{uuid}", 	employeeHandler.DeleteEmployee).Methods(http.MethodDelete)
 }
 

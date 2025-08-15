@@ -7,9 +7,8 @@ import (
 )
 
 type AuthInterface interface {
-    GetEmployeeByUsername(ctx context.Context, userName string) (models.Employee, error)
-    // Register(emp *models.Employee) (*models.Employee, error)
-    // Login(emp *models.Employee) (*models.Employee, error)
-    // Logout(emp *models.Employee) (*models.Employee, error)
+    GetEmployeeByUsername(ctx context.Context, userName string) (*models.Employee, error)
+    Register(emp *models.Employee) (*models.Employee, string, error)
+    Logout(employeeID string) (string, error)
 }
 

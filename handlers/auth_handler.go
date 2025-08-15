@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/mohamedkaram400/go-crud-ops/middlewares"
 	"github.com/mohamedkaram400/go-crud-ops/requests"
 	"github.com/mohamedkaram400/go-crud-ops/usecases"
 )
@@ -28,14 +29,38 @@ func (h *AuthHandler) LoginHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]string{"token": token})
 }
 
-func (svc *AuthHandler) RegisterHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Add("Content-Type", "application/json")
+func (h *AuthHandler) RegisterHandler(w http.ResponseWriter, r *http.Request) {
+	var req requests.RegisterRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid input", http.StatusBadRequest)
+		return
+	}
 
-	res := &PaginatedResult{}
-	defer json.NewEncoder(w).Encode(res)
+	emp, msg, err := h.Service.Register(r.Context(), &req)
+	if err != nil {
+		http.Error(w, msg, http.StatusBadRequest)
+		return
+	}
+
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"message":  msg,
+		"employee": emp,
+	})
 }
 
 func (h *AuthHandler) LogoutHandler(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(`{"message":"Logged out"}`))
+	// Get employee ID from context (set in JWT middleware)
+	empID, ok := r.Context().Value(middlewares.EmployeeIDKey).(string)
+	if !ok || empID == "" {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	msg, err := h.Service.Logout(empID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	json.NewEncoder(w).Encode(map[string]string{"message": msg})
 }

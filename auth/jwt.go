@@ -8,10 +8,10 @@ import (
 
 var jwtSecret = []byte("YOUR_SECRET_KEY") // load from env
 
-func GenerateJWT(employeeID string) (string, error) {
+func GenerateJWT(employeeID string, hours int) (string, error) {
 	claims := jwt.MapClaims{}
 	claims["employee_id"] = employeeID
-	claims["exp"] = time.Now().Add(time.Hour * 2).Unix()
+	claims["exp"] = time.Now().Add(time.Duration(hours) * time.Hour).Unix()
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	return token.SignedString(jwtSecret)
