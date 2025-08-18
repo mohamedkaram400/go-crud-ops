@@ -8,13 +8,31 @@ import (
 
 var jwtSecret = []byte("YOUR_SECRET_KEY") // load from env
 
-func GenerateJWT(employeeID string, hours int) (string, error) {
-	claims := jwt.MapClaims{}
-	claims["employee_id"] = employeeID
-	claims["exp"] = time.Now().Add(time.Duration(hours) * time.Hour).Unix()
+type TokenType string
+
+const (
+	AccessToken  TokenType = "access"
+	RefreshToken TokenType = "refresh"
+)
+
+func GenerateToken(employeeID string, duration time.Duration, tokenType TokenType) (string, error) {
+
+	claims := jwt.MapClaims{
+		"employee_id": employeeID,
+		"exp":         time.Now().Add(duration).Unix(),
+		"type":        tokenType,
+	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	return token.SignedString(jwtSecret)
+}
+
+func GenerateAccessToken(employeeID string, hours int) (string, error) {
+	return GenerateToken(employeeID, time.Duration(hours)*time.Hour, AccessToken)
+}
+
+func GenerateRefreshToken(employeeID string, days int) (string, error) {
+	return GenerateToken(employeeID, time.Duration(days)*24*time.Hour, RefreshToken)
 }
 
 func ValidateJWT(tokenString string) (string, error) {

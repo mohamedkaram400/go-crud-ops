@@ -25,54 +25,38 @@ func main() {
 		log.Fatal("❌ Error loading .env file")
 	}
 
-	// 2. Connect to MongoDB
-	client, err := db.ConnectMongo(config.GetMongoURI())
+	// 2. Connect DBs
+	client, err := db.ConnectMongo(config.GetMongoURI())	// MongoDB
 	if err != nil {
 		log.Fatal("❌ Failed to connect Mongo:", err)
 	}
-
-	// 3. Connect to Redis
-	if err := redisclient.Init(); err != nil {
+	if err := redisclient.Init(); err != nil {				// Redis
 		log.Fatalf("❌ Failed to connect Redis: %v", err)
 	}
-
-	// 4. Get Employee Collection for employees
+	
+	// 3. Init repositories
 	employeeCollection := client.Database(config.GetDBName()).Collection(config.GetCollectionName())
-
-	// 5. Create Repository layer
 	employeeRepo := &repository.EmployeeRepo{MongoCollection: employeeCollection}
-
-	// 6. Create service layer
-	employeeService := &usecases.EmployeeService{Repo: employeeRepo}
-
-	// 7. Create handler layer
-	employeeHandler := &handlers.EmployeeHandler{Service: employeeService}
-
-	// 8. Create router and register API routes
-	router := mux.NewRouter()
-
-	// 9. Add rate limiter validation
-	router.Use(middlewares.RateLimiter(config.GetRateNumber(), time.Second))
-
-	// 10. Add resource for auth module
 	authRepo := &repository.AuthRepo{MongoCollection: employeeCollection}
 
+	// 4. Init services
+	employeeService := &usecases.EmployeeService{Repo: employeeRepo}
 	authService := &usecases.AuthService{Repo: authRepo}
 
+	// 5. Init handlers
+	employeeHandler := &handlers.EmployeeHandler{Service: employeeService}
 	authHandler := &handlers.AuthHandler{Service: authService}
 
-	// 11. Register routes with api version 1
+	// 6. Router
+	router := mux.NewRouter()
+	router.Use(middlewares.RateLimiter(config.GetRateNumber(), time.Second))
+
+	// 7. API v1
 	api := router.PathPrefix("/api/v1").Subrouter()
-
-	// Public (no auth)
 	routes.RegisterAuthRoutes(api, authHandler)
+	routes.RegisterEmployeeRoutes(api, employeeHandler)
 
-	// Protected (JWT required) — mount directly at /api/v1/employees
-	employees := router.PathPrefix("/api/v1/employees").Subrouter()
-	employees.Use(middlewares.JWTAuth)
-	routes.RegisterEmployeeRoutes(employees, employeeHandler)	
-
-	// 12. Start HTTP server
+	// 8. Start HTTP server
 	StartServer(router)
 }
 

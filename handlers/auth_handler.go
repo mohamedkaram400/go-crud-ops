@@ -3,7 +3,8 @@ package handlers
 import (
 	"encoding/json"
 	"net/http"
-
+	"fmt"
+	
 	"github.com/mohamedkaram400/go-crud-ops/middlewares"
 	"github.com/mohamedkaram400/go-crud-ops/requests"
 	"github.com/mohamedkaram400/go-crud-ops/usecases"
@@ -20,13 +21,16 @@ func (h *AuthHandler) LoginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token, err := h.Service.Login(r.Context(), &req)
+	token, refreshToken, err := h.Service.Login(r.Context(), &req)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusUnauthorized)
 		return
 	}
 
-	json.NewEncoder(w).Encode(map[string]string{"token": token})
+	json.NewEncoder(w).Encode(map[string]string{
+		"access_token":  token,
+		"refresh_token": refreshToken,
+	})
 }
 
 func (h *AuthHandler) RegisterHandler(w http.ResponseWriter, r *http.Request) {
@@ -48,19 +52,45 @@ func (h *AuthHandler) RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+func (h *AuthHandler) RefreshHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+        http.Error(w, "Method not allowed, please use POST", http.StatusMethodNotAllowed)
+        return
+    }
+
+	// Parse refresh token (e.g., from header or body)
+	refreshToken := r.Header.Get("X-Refresh-Token")
+	if refreshToken == "" {
+		http.Error(w, "Missing refresh token", http.StatusBadRequest)
+		return
+	}
+
+	// Call service
+	newAccessToken, err := h.Service.Refresh(refreshToken)
+	if err != nil {
+		http.Error(w, "Invalid refresh token", http.StatusUnauthorized)
+		return
+	}
+
+	// Send new access token
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	fmt.Fprintf(w, `{"access_token":"%s"}`, newAccessToken)
+}
+
 func (h *AuthHandler) LogoutHandler(w http.ResponseWriter, r *http.Request) {
-	// Get employee ID from context (set in JWT middleware)
+
 	empID, ok := r.Context().Value(middlewares.EmployeeIDKey).(string)
 	if !ok || empID == "" {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
 
-	msg, err := h.Service.Logout(empID)
+	err := h.Service.Logout(empID)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "Logout failed", http.StatusInternalServerError)
 		return
 	}
 
-	json.NewEncoder(w).Encode(map[string]string{"message": msg})
+	json.NewEncoder(w).Encode(map[string]string{"message": "User logged out successfully"})
 }

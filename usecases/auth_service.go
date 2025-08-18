@@ -3,13 +3,16 @@ package usecases
 import (
 	"context"
 	"errors"
-	
+	"fmt"
+	"time"
+
 	"github.com/google/uuid"
 	"github.com/mohamedkaram400/go-crud-ops/helpers"
 	"github.com/mohamedkaram400/go-crud-ops/interfaces"
 	"github.com/mohamedkaram400/go-crud-ops/models"
 	"github.com/mohamedkaram400/go-crud-ops/requests"
 	"github.com/mohamedkaram400/go-crud-ops/auth"
+	"github.com/mohamedkaram400/go-crud-ops/internal/redis"
 )
 
 type AuthService struct {
@@ -46,25 +49,59 @@ func (svc *AuthService) Register(ctx context.Context, req *requests.RegisterRequ
 	return svc.Repo.Register(emp)
 }
 
-func (svc *AuthService) Login(ctx context.Context, req *requests.LoginRequest) (string, error) {
+func (svc *AuthService) Login(ctx context.Context, req *requests.LoginRequest) (string, string, error) {
 	emp, err := svc.Repo.GetEmployeeByUsername(ctx, req.UserName)
 	if err != nil {
-		return "", errors.New("invalid username or password")
+		return "", "", errors.New("invalid username or password")
 	}
 
 	if err := helpers.CheckPassword(emp.Password, req.Password); err != nil {
-		return "", errors.New("invalid username or password")
+		return "", "", errors.New("invalid username or password")
 	}
 
-	// Generate JWT token
-	token, err := auth.GenerateJWT(emp.ID, 3)
+	// Access token (short-lived, 15 min)
+	accessToken, err := auth.GenerateAccessToken(emp.ID, 1) // 1 hour for now
 	if err != nil {
-		return "", errors.New("could not generate token")
+		return "", "", errors.New("could not generate access token")
 	}
 
-	return token, nil
+	// Refresh token (long-lived, 7 days)
+	refreshToken, err := auth.GenerateRefreshToken(emp.ID, 7)
+	if err != nil {
+		return "", "", errors.New("could not generate refresh token")
+	}
+
+	// Store refresh token in Redis or DB
+	err = redisclient.Client.Set(ctx, emp.ID, refreshToken, 7*24*time.Hour).Err()
+	if err != nil {
+		return "", "", errors.New("failed to store refresh token")
+	}
+
+	return accessToken, refreshToken, nil
 }
 
-func (svc *AuthService) Logout(employeeID string) (string, error) {
-	return svc.Repo.Logout(employeeID)
+func (svc *AuthService) Refresh(refreshToken string) (string, error) {
+	// 1. Validate refresh token
+	employeeID, err := auth.ValidateJWT(refreshToken)
+	if err != nil {
+		return "", fmt.Errorf("invalid refresh token: %w", err)
+	}
+
+	// 2. Check if refresh token exists in Redis (not revoked)
+	storedToken, err := redisclient.Client.Get(context.Background(), employeeID).Result()
+	if err != nil || storedToken != refreshToken {
+		return "", fmt.Errorf("refresh token not valid or revoked")
+	}
+
+	// 3. Generate new access token
+	newAccessToken, err := auth.GenerateAccessToken(employeeID, int(time.Hour.Seconds())) // expires in 1h
+	if err != nil {
+		return "", err
+	}
+
+	return newAccessToken, nil
+}
+
+func (svc *AuthService) Logout(employeeID string) error {
+	return redisclient.Client.Del(context.Background(), employeeID).Err()
 }
