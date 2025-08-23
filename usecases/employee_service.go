@@ -3,11 +3,9 @@ package usecases
 import (
 	"errors"
 	"log"
-	"net/http"
 	"strconv"
 
 	"github.com/google/uuid"
-	"github.com/gorilla/mux"
 	"github.com/mohamedkaram400/go-crud-ops/helpers"
 	"github.com/mohamedkaram400/go-crud-ops/interfaces"
 	"github.com/mohamedkaram400/go-crud-ops/models"
@@ -75,12 +73,11 @@ func (svc *EmployeeService) GetAllEmployees(pageStr, limitStr string) ([]*models
 	return employees, "Employees returned successfully", totalCount, page, limit, nil
 }
 
-func (svc *EmployeeService) FindEmployeeByID(r *http.Request) (*models.Employee, error) {
+func (svc *EmployeeService) FindEmployeeByID(employeeID string) (*models.Employee, error) {
 
-	empID := mux.Vars(r)["uuid"]
-	log.Println("employee id", empID)
+	log.Println("employee id", employeeID)
 
-	employee, err := svc.Repo.FindEmployeeByID(empID)
+	employee, err := svc.Repo.FindEmployeeByID(employeeID)
 
 	if err != nil {
 		return nil, err
@@ -89,23 +86,21 @@ func (svc *EmployeeService) FindEmployeeByID(r *http.Request) (*models.Employee,
 	return employee, nil
 }
 
-func (svc *EmployeeService) UpdateEmployee(r *http.Request, reqData *requests.UpdateEmployeeRequest) (int, error) {
+func (svc *EmployeeService) UpdateEmployeeByID(employeeID string, reqData *requests.UpdateEmployeeRequest) (int, error) {
 
 	// Step 2: Get employee ID from path
-	vars := mux.Vars(r)
-	id := vars["uuid"]
-	if id == "" {
+	if employeeID == "" {
 		return 0, errors.New("employee ID is required in path")
 	}
 
 	// Convert request to model
 	employee := &models.Employee{
-		ID: id,
+		ID: employeeID,
 		Name:       reqData.Name,
 		Department: reqData.Department,
 	}
 
-	count, err := svc.Repo.UpdateEmployee(id, employee)
+	count, err := svc.Repo.UpdateEmployee(employeeID, employee)
 	if err != nil {
 		return 0, err
 	}
@@ -113,16 +108,15 @@ func (svc *EmployeeService) UpdateEmployee(r *http.Request, reqData *requests.Up
 	return count, nil
 }
 
-func (svc *EmployeeService) DeleteEmployee(r *http.Request) (int, error) {
+func (svc *EmployeeService) DeleteEmployeeByID(employeeID string) (int, error) {
 	
-	id := mux.Vars(r)["uuid"]
-	log.Println("employee id", id)
+	log.Println("employee id", employeeID)
 
-	if id == "" {
+	if employeeID == "" {
 		return 0, errors.New("invalid employee id")
 	}
 
-	count, err := svc.Repo.DeleteEmployee(id)
+	count, err := svc.Repo.DeleteEmployee(employeeID)
 	if err != nil {
 		return 0, err
 	}

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"github.com/gorilla/mux"
 
 	"github.com/mohamedkaram400/go-crud-ops/helpers"
 	"github.com/mohamedkaram400/go-crud-ops/models"
@@ -67,9 +68,10 @@ func (h *EmployeeHandler) GetEmployeeByID(w http.ResponseWriter, r *http.Request
 
 	res := &EmployeeResponse{}
 	defer json.NewEncoder(w).Encode(res)
+	employeeID := mux.Vars(r)["uuid"]
 
 	// Get employee
-	employee, err := h.Service.FindEmployeeByID(r)
+	employee, err := h.Service.FindEmployeeByID(employeeID)
 
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
@@ -133,9 +135,10 @@ func (h *EmployeeHandler) UpdateEmployee(w http.ResponseWriter, r *http.Request)
 		res.Error = err.Error()
 		return
 	}
+	employeeID := mux.Vars(r)["uuid"]
 
 	// Step 2: Call service
-	count, err := h.Service.UpdateEmployee(r, req)
+	count, err := h.Service.UpdateEmployeeByID(employeeID, req)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		res.Error = err.Error()
@@ -153,8 +156,9 @@ func (h *EmployeeHandler) DeleteEmployee(w http.ResponseWriter, r *http.Request)
 
 	res := &EmployeeResponse{}
 	defer json.NewEncoder(w).Encode(res)
+	employeeID := mux.Vars(r)["uuid"]
 
-	count, err := h.Service.DeleteEmployee(r)
+	count, err := h.Service.DeleteEmployeeByID(employeeID)
 
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)

@@ -1,0 +1,165 @@
+syntax = "proto3";
+
+package employee;
+
+option go_package = "/proto;proto";
+
+// ============================
+//  Auth Service
+// ============================
+service AuthService {
+  rpc Register(RegisterRequest) returns (RegisterResponse);
+  rpc Login(LoginRequest) returns (LoginResponse);
+  rpc Refresh(RefreshRequest) returns (RefreshResponse);
+  rpc Logout(LogoutRequest) returns (LogoutResponse);
+}
+
+// --- Auth Messages ---
+message RegisterRequest {
+  string name = 1;
+  string username = 2;
+  string password = 3;
+  string department = 4;
+}
+
+message RegisterResponse {
+  string message = 1;
+  Employee employee = 2;
+}
+
+message LoginRequest {
+  string username = 1;
+  string password = 2;
+}
+
+message LoginResponse {
+  string access_token = 1;
+  string refresh_token = 2;
+}
+
+message RefreshRequest {
+  string refresh_token = 1;
+}
+
+message RefreshResponse {
+  string access_token = 1;
+}
+
+message LogoutRequest {
+  string employee_id = 1;
+}
+
+message LogoutResponse {
+  string message = 1;
+}
+
+// ===============================================================================================================
+
+// ============================
+//  Employee CRUD Service
+// ============================
+service EmployeeService {
+  rpc GetAllEmployees(GetAllEmployeesRequest) returns (EmployeeListResponse);
+  rpc GetEmployeeByID(GetEmployeeRequest) returns (EmployeeResponse);
+  rpc CreateEmployee(CreateEmployeeRequest) returns (EmployeeResponse);
+  rpc UpdateEmployee(UpdateEmployeeRequest) returns (EmployeeResponse);
+  rpc DeleteEmployee(DeleteEmployeeRequest) returns (EmployeeResponse);
+}
+// --- Employee Messages ---
+
+
+message Employee {
+  string id = 1;
+  string name = 2;
+  string username = 3;
+  string department = 4;
+}
+
+message GetAllEmployeesRequest {
+  int32 page = 1;
+  int32 limit = 2;
+}
+
+message EmployeeListResponse {
+  string message = 1;
+  repeated Employee employees = 2;
+  int32 totalCount = 3;
+  int32 page = 4;
+  int32 limit = 5;
+}
+
+message GetEmployeeRequest {
+  string id = 1;
+}
+
+message CreateEmployeeRequest {
+  string name = 1;
+  string username = 2;
+  string password = 3;
+  string department = 4;
+}
+
+message UpdateEmployeeRequest {
+  string id = 1;
+  string name = 2;
+  string username = 3;
+  string password = 4;
+  string department = 5;
+}
+
+message DeleteEmployeeRequest {
+  string id = 1;
+}
+
+message EmployeeResponse {
+  string message = 1;
+  Employee employee = 2;
+}
+
+
+// ============================================
+// message Employee {
+//   string id = 1;
+//   string name = 2;
+//   string username = 3;
+//   string department = 4;
+// }
+
+// message CreateEmployeeRequest {
+//   string name = 1;
+//   string username = 2;
+//   string password = 3;
+//   string department = 4;
+// }
+
+// message GetEmployeeByIDRequest {
+//   string id = 1;
+// }
+
+// message GetAllEmployeesRequest {
+//   int32 page = 1;
+//   int32 limit = 2;
+// }
+
+// message UpdateEmployeeRequest {
+//   string id = 1;
+//   string name = 2;
+//   string department = 3;
+// }
+
+// message DeleteEmployeeRequest {
+//   string id = 1;
+// }
+
+// message EmployeeResponse {
+//   string message = 1;
+//   Employee employee = 2;
+// }
+
+// message EmployeeListResponse {
+//   string message = 1;
+//   repeated Employee data = 2;   
+//   int32 total_count = 3;
+//   int32 page = 4;
+//   int32 limit = 5;
+// }

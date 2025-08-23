@@ -4,6 +4,7 @@ import (
 	"log"
 	"net/http"
 	"time"
+	"net"
 
 	"github.com/gorilla/mux"
 	"github.com/joho/godotenv"
@@ -15,6 +16,10 @@ import (
 	"github.com/mohamedkaram400/go-crud-ops/repository"
 	"github.com/mohamedkaram400/go-crud-ops/routes"
 	"github.com/mohamedkaram400/go-crud-ops/usecases"
+    "google.golang.org/grpc/reflection"
+
+	"google.golang.org/grpc"
+	pb "github.com/mohamedkaram400/go-crud-ops/proto"
 )
 
 func main() {
@@ -44,9 +49,12 @@ func main() {
 	authService := &usecases.AuthService{Repo: authRepo}
 
 	// 5. Init handlers
-	employeeHandler := &handlers.EmployeeHandler{Service: employeeService}
 	authHandler := &handlers.AuthHandler{Service: authService}
-
+	authGRPCHandler := &handlers.AuthGRPCHandler{Service: authService}
+	
+	employeeHandler := &handlers.EmployeeHandler{Service: employeeService}
+	employeeGRPCHandler := &handlers.EmployeeGRPCHandler{Service: employeeService}
+		
 	// 6. Router
 	router := mux.NewRouter()
 	router.Use(middlewares.RateLimiter(config.GetRateNumber(), time.Second))
@@ -56,11 +64,33 @@ func main() {
 	routes.RegisterAuthRoutes(api, authHandler)
 	routes.RegisterEmployeeRoutes(api, employeeHandler)
 
-	// 8. Start HTTP server
-	StartServer(router)
+	// 8. Run REST + gRPC in goroutines
+	go startREST(router)
+	go startGRPC(authGRPCHandler, employeeGRPCHandler)
+
+	// Block forever
+	select {}
 }
 
-func StartServer(router *mux.Router) {
-	log.Println("🚀 Server is running on http://localhost:4444")
+func startREST(router *mux.Router) {
+	log.Println("🌍 REST server running at http://localhost:4444")
 	log.Fatal(http.ListenAndServe(":4444", router))
+}
+
+func startGRPC(authGRPCHandler *handlers.AuthGRPCHandler, employeeGRPCHandler *handlers.EmployeeGRPCHandler) {
+	lis, err := net.Listen("tcp", ":50051")
+	if err != nil {
+		log.Fatalf("❌ failed to listen: %v", err)
+	}
+
+	grpcServer := grpc.NewServer()
+	pb.RegisterAuthServiceServer(grpcServer, authGRPCHandler)
+	pb.RegisterEmployeeServiceServer(grpcServer, employeeGRPCHandler)
+
+    reflection.Register(grpcServer)
+
+	log.Println("⚡ gRPC server running at :50051")
+	if err := grpcServer.Serve(lis); err != nil {
+		log.Fatalf("❌ failed to serve: %v", err)
+	}
 }
