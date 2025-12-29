@@ -106,10 +106,10 @@ go run main.go
 
 ## 👤 Author
 ### Mohamed Karam
-Backend Developer — Go & Distributed Systems
+Backend Developer — Laravel & Go
 
 ---
 
-## 📄 License
+## 🛡️ License
 
-This project is open-source and licensed under the MIT License.
+This project is licensed under the [MIT License](LICENSE). You are free to use, modify, and share this project with proper attribution.
