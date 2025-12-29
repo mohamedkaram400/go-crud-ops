@@ -1,4 +1,4 @@
-package repository
+package tests
 
 import (
 	"context"
@@ -12,6 +12,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
+	"github.com/mohamedkaram400/go-crud-ops/repository" 
 )
 
 func newMongoClient() *mongo.Client {
@@ -49,7 +50,7 @@ func TestMongoOperations(t *testing.T) {
 
 	coll := mongoTestClient.Database("compnay").Collection("employeees")
 
-	empRepo := EmployeeRepo{MongoCollection: coll}
+	empRepo := repository.EmployeeRepo{MongoCollection: coll}
 
 	t.Run("Insert Employee 1", func (t *testing.T) {
 		emp := models.Employee {
