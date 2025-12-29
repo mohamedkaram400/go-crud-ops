@@ -100,8 +100,10 @@ Build a **production-style CRUD service** that:
 ### Run the project
 
 ```bash
+go install github.com/air-verse/air@latest
+export PATH=$PATH:$(go env GOPATH)/bin
 go mod tidy
-go run main.go
+air
 ```
 
 ## 👤 Author
