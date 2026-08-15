@@ -1,14 +1,13 @@
 package handlers
 
-
 import (
 	"context"
+	"fmt"
 
+	pb "github.com/mohamedkaram400/go-crud-ops/proto"
 	"github.com/mohamedkaram400/go-crud-ops/requests"
 	"github.com/mohamedkaram400/go-crud-ops/usecases"
-	pb "github.com/mohamedkaram400/go-crud-ops/proto"
 )
-
 
 // AuthGRPCHandler implements the gRPC AuthService
 type AuthGRPCHandler struct {
@@ -24,7 +23,8 @@ func (s *AuthGRPCHandler) Register(ctx context.Context, req *pb.RegisterRequest)
 		Password:  req.Password,
 		Department: req.Department,
 	}
-
+	fmt.Println("🔥 Register endpoint hit")
+	
 	emp, msg, err := s.Service.Register(ctx, newReq)
 	if err != nil {
 		return nil, err
